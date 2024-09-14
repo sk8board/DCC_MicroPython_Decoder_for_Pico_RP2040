@@ -2,7 +2,8 @@
 # Code provides: Two seconds forward at speed 16 of 28 steps, then two seconds backward at speed 16 of 28 steps.
 # GPIO2 is connected to the direction pin of a full H-bridge driver.
 # The output terminals of the H-bridge driver are connected to the railroad track rails.
-
+# Original code is from the YouTube channel by Sonny Cruz.
+# https://www.youtube.com/watch?v=NSRU2ZYB_7U
 
 import array
 from machine import Pin
