@@ -1,4 +1,4 @@
-# RP2040 DMA Example with PIO
+# RP2040 DMA Interrupt Example with PIO
 # 
 # 1) For loop will feed state machine 0 one bit at a time.
 # 2) State machine 0 will pass the bit from TX FIFO to RX FIFO then set the IRQ 0 flag
@@ -7,6 +7,9 @@
 # 5) State machine 1 will accumulate 32 bits then set the IRQ 1 flag
 # 6) State machine 1 interrupt will trigger DMA 1
 # 7) DMA 1 will move the 32-bit array to the variable "data"
+# 8) After moving the 32-bit array, DMA will trigger the test() function.
+#
+# Three interrupts is not practical for a real application, but this does provide three examples of DMA interrupts in one example.
 #
 # NOTE: if additional speed is required, then you can change the functions to use Viper code rather than MicroPython code
 
