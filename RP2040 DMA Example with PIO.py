@@ -79,7 +79,7 @@ dma1_ctrl = dma1.pack_ctrl(
     ring_size = 0,      # increment size is zero
     ring_sel = False,   # use ring_size
     treq_sel = 5,       # select transfer rate of PIO0 RX FIFO, DREQ_PIO0_RX1
-    irq_quiet = True,   # do not generate an interrupt after transfer is complete
+    irq_quiet = False,   # do not generate an interrupt after transfer is complete
     bswap = False,      # do not reverse the order of the word
     sniff_en = False,    # do not allow access to debug
     chain_to = dma1.channel # chain to self
@@ -109,6 +109,11 @@ sm0.active(1)
 sm1.active(1)
 dma0.active(1)
 dma1.active(1)
+
+def test(x):
+    print("DMA irq test, ", bin(data[0])) # verify interrupt from DMA
+
+dma1.irq(handler=test, hard=False) # interrupt from state machine
 ### End DMA Code
 
 test_bitstream = 0b111111111101010010010110001011100
