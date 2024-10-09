@@ -4,7 +4,7 @@
 # 2) State machine 0 will pass the bit from TX FIFO to RX FIFO then autopush will trigger DMA 0 or DMA 1
 # 3) DMA 0 and DMA 1 will move the bit from state machine 0 TX FIFO to state machine 1 RX FIFO
 #    Note: DMA 0 and DMA 1 are "chained" together, which means after DMA 0 completes the transfer, 
-#    then DMA 0 will tiggers DMA 1, then DMA 1 will do the same to DMA 0 after completion
+#    then DMA 0 will triggers DMA 1, then DMA 1 will do the same to DMA 0 after completion
 #    of data transfer, the RP2040 datasheet calls this "ping-pong" DMA transfer.
 # 4) State machine 1 will accumulate 32 bits then autopush will trigger DMA 2 or DMA 3
 # 5) DMA 2 and DMA 3 will move the bit from state machine 1 TX FIFO to the address of "output_data".
@@ -43,7 +43,7 @@ def build_bitstream():  # accumulate 32-bits to the RX FIFO one bit at a time fr
     pull(block)			# wait (block) for a 32-bit word to be added to the TX FIFO, then move the word to the OSR
     out(x, 1)			# move one bit from OSR to scratch x
     in_(x, 1)			# move one bit from scratch x to OSR
-    jmp(y_dec, "loop")	# loop back unill 32 bits (bit stream) have filled the ISR
+    jmp(y_dec, "loop")	# loop back until 32 bits (bit stream) have filled the ISR
     
     wrap()
 
