@@ -18,7 +18,7 @@ import array
 import time
 import random
 
-output_data = array.array('L',[0xffffffff]) # memory location where proceced data will reside
+output_data = array.array('L',[0xffffffff]) # memory location where proceed data will reside
 
 ### State Machine 0
 @rp2.asm_pio(in_shiftdir=0, out_shiftdir=1, autopull=True, pull_thresh=1, autopush=True, push_thresh=1)
@@ -45,7 +45,7 @@ def build_bitstream():  # accumulate 32-bits to the RX FIFO one bit at a time fr
     pull(block)			# wait (block) for a 32-bit word to be added to the TX FIFO, then move the word to the OSR
     out(x, 1)			# move one bit from OSR to scratch x
     in_(x, 1)			# move one bit from scratch x to OSR
-    jmp(y_dec, "loop")	# loop back unill 32 bits (bit stream) have filled the ISR
+    jmp(y_dec, "loop")	# loop back until 32 bits (bit stream) have filled the ISR
     
     push(noblock)		# move the 32-bits from the ISR to the RX FIFO
     irq(rel(0))			# set state machine 1 IRQ flag which will trigger DMA 1 using sm1.irq handler to get the 32-bit word from the RX FIFO
@@ -105,7 +105,7 @@ def trigger_dma1(sm1):      # dma1 trigger function passes variables to dma1 con
     dma1_configure(RXF1_addr,output_data,dma1_ctrl)
     #print(bin(output_data[0])) # view the 32-bit array to verify this function is operating
 
-sm0.irq(handler=trigger_dma0, trigger=1, hard=True)     # state machine 0 interrupt, true = immedieate execution
+sm0.irq(handler=trigger_dma0, trigger=1, hard=True)     # state machine 0 interrupt, true = immediate execution
 sm1.irq(handler=trigger_dma1, trigger=1, hard=False)    # state machine 1 interrupt, false = scheduled execution
 
 sm0.active(1)   # set state machine active
