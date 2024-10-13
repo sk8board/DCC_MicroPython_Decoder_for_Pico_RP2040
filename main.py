@@ -1,11 +1,11 @@
 from machine import Pin
 import time
-import DCC
+import DCC   # import the DCC.py file to use the function button decoder as shown below.
 
 LED = Pin(25, Pin.OUT)
 
-# Enter the GPIO pin that is connected to the railroad tracks
-# and enter the desired DCC address for this decoder
+# Enter the GPIO pin number that is connected to the railroad tracks
+# and enter the desired DCC address for this decoder.
 # Note: appropriate circuitry is needed between the Pico
 # and the railroad tracks to protect the Pico from damage.
 # Note: the address must be between 1 and 127
@@ -15,5 +15,4 @@ while True:					# DCC.f_btn(n) returns True or False of button number 'n'
     LED.value(DCC.f_btn(3))	# Works for function buttons 1 to 12
     print("DCC", f"{DCC.func_btn_array[0]:013b}") # print the array of function buttons
     time.sleep(0.5)
-    
     
