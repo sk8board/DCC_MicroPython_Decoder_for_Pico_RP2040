@@ -2,7 +2,7 @@
 # This is software decodes DCC model train serial communication to obtain the state of function buttons F1-F12.
 # The intent is to use this code with a Raspberry Pi Pico or WaveShare RP2040-Zero to program and actuate signals and gates on a model train layout.
 # MicroPython code of the parser functions is slow (700us), which consumes significant processor time (10%).
-# Viper coding with one long parcer function is faster (55us), resulting in a processor time (1%).
+# Viper code with one long parcer function is faster (55us), resulting in a processor time (1%).
 # Note: code was developed using MicroPython version v1.23
 
 from rp2 import PIO, StateMachine, asm_pio
