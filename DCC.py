@@ -1,9 +1,7 @@
 # RP2040 DCC train decoder
 # Work In Progress
-# This is software decodes DCC model train serial communication to obtain the state of function buttons F1-F12.
+# This software decodes DCC model train serial communication to obtain the state of function buttons F1-F12.
 # The intent is to use this code with a Raspberry Pi Pico or WaveShare RP2040-Zero to program and actuate signals and gates on a model train layout.
-# MicroPython code of the parser functions is slow (700us), which consumes significant processor time (10%).
-# Viper coding of the parser functions would improve parsing speed resulting in an increase of available processor time.
 # Note: appropriate circuitry is needed between the Pico and the railroad tracks to protect the Pico from damage.
 # Note: code was developed using MicroPython version v1.23
 
@@ -12,8 +10,9 @@ import array
 import rp2
 
 ### Definitions
-semaphore = array.array('L',[0x00000000]) 
-func_btn_array = array.array('L',[0x00000000]) 
+semaphore = 0
+func_btn_array = array.array('L',[0b0000000000000])
+func_btn_array_addr = uctypes.addressof(func_btn_array)
 data = array.array('L',[0xffffffff]) 
 
 class pin_addr: 							# retrieve GPIO pin number that connect to the railroad tracks
@@ -154,7 +153,6 @@ dma3_ctrl = dma3.pack_ctrl(
     chain_to = dma2.channel # chain to dma2
 )
 
-
 sm1.active(1)   # set state machine active
 dma0.active(1)  # set DMA channel active
 dma1.active(1)  # set DMA channel active
@@ -173,60 +171,64 @@ dma3_config = dma3.config(read=RXF1_addr, write=uctypes.addressof(data), count=1
 ### End DMA Code
 
 ### Data Parser Code
-def addr_parser(data_): # parse bits from data to obtain the address
-    bit0 = ((data_ >> 24 & 1) != 0)
-    bit1 = ((data_ >> 25 & 1) != 0)
-    bit2 = ((data_ >> 26 & 1) != 0)
-    bit3 = ((data_ >> 27 & 1) != 0)
-    bit4 = ((data_ >> 28 & 1) != 0)
-    bit5 = ((data_ >> 29 & 1) != 0)
-    bit6 = ((data_ >> 30 & 1) != 0)
-    return bit6 << 6 | bit5 << 5 | bit4 << 4 | bit3 << 3 | bit2 << 2 | bit1 << 1 | bit0 << 0
+@micropython.viper
+def addr_parser(data_:int)->int: # parse bits from data to obtain the address
+    bit0 = ((int(data_) >> 24 & 1) != 0)
+    bit1 = ((int(data_) >> 25 & 1) != 0)
+    bit2 = ((int(data_) >> 26 & 1) != 0)
+    bit3 = ((int(data_) >> 27 & 1) != 0)
+    bit4 = ((int(data_) >> 28 & 1) != 0)
+    bit5 = ((int(data_) >> 29 & 1) != 0)
+    bit6 = ((int(data_) >> 30 & 1) != 0)
+    return int(bit6) << 6 | int(bit5) << 5 | int(bit4) << 4 | int(bit3) << 3 | int(bit2) << 2 | int(bit1) << 1 | int(bit0) << 0
 
-def func_grp_parser(data_): # parse bits from data to obtain the function group number
-    bit0 = ((data_ >> 19 & 1) != 0)
-    bit1 = ((data_ >> 20 & 1) != 0)
-    bit2 = ((data_ >> 21 & 1) != 0)
-    bit3 = ((data_ >> 22 & 1) != 0)
-    return bit3 << 3 | bit2 << 2 | bit1 << 1 | bit0 << 0
+@micropython.viper
+def func_grp_parser(data_:int)->int: # parse bits from data to obtain the function group number
+    bit0 = ((int(data_) >> 19 & 1) != 0)
+    bit1 = ((int(data_) >> 20 & 1) != 0)
+    bit2 = ((int(data_) >> 21 & 1) != 0)
+    bit3 = ((int(data_) >> 22 & 1) != 0)
+    return int(bit3) << 3 | int(bit2) << 2 | int(bit1) << 1 | int(bit0) << 0
 
-def func_btn_parser(data_): # parse bits from data to obtain the state of the function buttons
-    bit0 = ((data_ >> 15 & 1) != 0)
-    bit1 = ((data_ >> 16 & 1) != 0)
-    bit2 = ((data_ >> 17 & 1) != 0)
-    bit3 = ((data_ >> 18 & 1) != 0)
-    return bit3 << 3 | bit2 << 2 | bit1 << 1 | bit0 << 0
+@micropython.viper
+def func_btn_parser(data_:int)->int: # parse bits from data to obtain the state of the function buttons
+    bit0 = ((int(data_) >> 15 & 1) != 0)
+    bit1 = ((int(data_) >> 16 & 1) != 0)
+    bit2 = ((int(data_) >> 17 & 1) != 0)
+    bit3 = ((int(data_) >> 18 & 1) != 0)
+    return int(bit3) << 3 | int(bit2) << 2 | int(bit1) << 1 | int(bit0) << 0
 
-def func_btn_array_build(data_,func_btn_array_):    # Update and build the function button array from data
-    global semaphore, func_btn_array
-    semaphore[0] = 1   # Prevent other functions from accessing func_btn_array while manipulating this variables
-    if addr_parser(data_) == dcc_address_number:
-        if func_grp_parser(data_) == 0b1000: # F1-F4
-            func_btn_array_ = func_btn_array_ & 0b1111111100001
-            func_btn_array_ = func_btn_array_ | func_btn_parser(data_) << 1  
-        if func_grp_parser(data_) == 0b1001: # F1-F4
-            func_btn_array_ = func_btn_array_ & 0b1111111100001
-            func_btn_array_ = func_btn_array_ | func_btn_parser(data_) << 1       
-        if func_grp_parser(data_) == 0b1011: # F5-F8
-            func_btn_array_ = func_btn_array_ & 0b1111000011111
-            func_btn_array_ = func_btn_array_ | func_btn_parser(data_) << 5
-        if func_grp_parser(data_) == 0b1010: # F9-F12
-            func_btn_array_ = func_btn_array_ & 0b0000111111111
-            func_btn_array_ = func_btn_array_ | func_btn_parser(data_) << 9
-        func_btn_array[0] = func_btn_array_
-    semaphore[0] = 0 # Allow access of func_btn_array to other functions
+@micropython.viper
+def func_btn_array_build(data_:int,func_btn_array_:int):    # Update and build the function button array from data
+    global semaphore
+    semaphore = 1   # Prevent other functions from accessing func_btn_array while manipulating this variables
+    #print(addr_parser_)
+    if int(addr_parser(data_)) == int(dcc_address_number):
+        func_grp_parser_ = int(func_grp_parser(data_))
+        if func_grp_parser_ == 0b1000: # F1-F4
+            func_btn_array_ = int(func_btn_array_) & int(0b1111111100001)
+            func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data_)) << 1  
+        if func_grp_parser_ == 0b1001: # F1-F4
+            func_btn_array_ = int(func_btn_array_) & 0b1111111100001
+            func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data_)) << 1       
+        if func_grp_parser_ == 0b1011: # F5-F8
+            func_btn_array_ = int(func_btn_array_) & 0b1111000011111
+            func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data_)) << 5
+        if func_grp_parser_ == 0b1010: # F9-F12
+            func_btn_array_ = int(func_btn_array_) & 0b0000111111111
+            func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data_)) << 9
+        ptr32(func_btn_array_addr)[0] = int(func_btn_array_)
+    semaphore = 0 # Allow access of func_btn_array to other functions
 
 def f_btn(func_btn_number): # return the boolean value of the x'th bit from the function button array
-    if semaphore[0] == 0:  # do not access the func_btn_array variable, if dma23_irq_handler() is manipulating the variable
-        #print("DCC", f"{func_btn_array[0]:013b}") 
+    if semaphore == 0:  # do not access the func_btn_array variable, if dma23_irq_handler() is manipulating the variable
         return ((func_btn_array[0] >> func_btn_number & 1) != 0) 
 
 def dma23_irq_handler(dma1):
-    if semaphore[0] == 0:  # do not access the func_btn_array variable, if DCC() is manipulating the variable
+    if semaphore == 0:  # do not access the func_btn_array variable, if DCC() is manipulating the variable
         func_btn_array_build(data[0],func_btn_array[0])
 
 # Note: dma2 and dma3 are configured to alternate their transfer of bits from state machine 1 to the variable "data"
 dma2.irq(handler=dma23_irq_handler, hard=False)  # call dma23_irq_handler() when dma2 completes transfer of data
 dma3.irq(handler=dma23_irq_handler, hard=False)  # call dma23_irq_handler() when dma3 completes transfer of data
 ### End Data Parser
-
