@@ -218,13 +218,13 @@ def func_btn_array_build(data_:int,func_btn_array_:int):    # Update and build t
         if func_grp_parser_ == 0b1000: # F1-F4
             func_btn_array_ = int(func_btn_array_) & int(0b1111111100001)
             func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data_)) << 1  
-        if func_grp_parser_ == 0b1001: # F1-F4
+        elif func_grp_parser_ == 0b1001: # F1-F4
             func_btn_array_ = int(func_btn_array_) & 0b1111111100001
             func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data_)) << 1       
-        if func_grp_parser_ == 0b1011: # F5-F8
+        elif func_grp_parser_ == 0b1011: # F5-F8
             func_btn_array_ = int(func_btn_array_) & 0b1111000011111
             func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data_)) << 5
-        if func_grp_parser_ == 0b1010: # F9-F12
+        elif func_grp_parser_ == 0b1010: # F9-F12
             func_btn_array_ = int(func_btn_array_) & 0b0000111111111
             func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data_)) << 9
         #func_btn_array[0] = func_btn_array_
