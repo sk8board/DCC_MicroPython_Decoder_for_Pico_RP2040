@@ -145,9 +145,9 @@ def get_bit(value, n):
     return ((value >> n & 1) != 0)
 
 # write input_data one bit at a time to state machine 0
-for k in range(0, 4):
+for k in range(4):
     input_data = random.getrandbits(32) # create random 32-bit number
-    for i in range(31,-1,-1):
+    for i in range(32):
         j = get_bit(input_data, i)
         if j == 1:
             sm0.put(0b1)
