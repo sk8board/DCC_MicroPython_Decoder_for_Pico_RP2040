@@ -206,7 +206,7 @@ def parser(data_:int, DCC_address_:int, func_btn_array_:int, func_btn_array_addr
             btn_bits = int(btn_bit3) << 3 | int(btn_bit2) << 2 | int(btn_bit1) << 1 | int(btn_bit0) << 0
             func_btn_array_ = int(func_btn_array_) & 0b1111111100001
             func_btn_array_ = int(func_btn_array_) | btn_bits << 1
-        if func_grp_ == 0b1001: # F1-F4
+        elif func_grp_ == 0b1001: # F1-F4
             btn_bit0 = ((int(data_) >> 15 & 1) != 0)
             btn_bit1 = ((int(data_) >> 16 & 1) != 0)
             btn_bit2 = ((int(data_) >> 17 & 1) != 0)
@@ -214,7 +214,7 @@ def parser(data_:int, DCC_address_:int, func_btn_array_:int, func_btn_array_addr
             btn_bits = int(btn_bit3) << 3 | int(btn_bit2) << 2 | int(btn_bit1) << 1 | int(btn_bit0) << 0
             func_btn_array_ = int(func_btn_array_) & 0b1111111100001
             func_btn_array_ = int(func_btn_array_) | btn_bits << 1        
-        if func_grp_ == 0b1011: # F5-F8
+        elif func_grp_ == 0b1011: # F5-F8
             btn_bit0 = ((int(data_) >> 15 & 1) != 0)
             btn_bit1 = ((int(data_) >> 16 & 1) != 0)
             btn_bit2 = ((int(data_) >> 17 & 1) != 0)
@@ -222,7 +222,7 @@ def parser(data_:int, DCC_address_:int, func_btn_array_:int, func_btn_array_addr
             btn_bits = int(btn_bit3) << 3 | int(btn_bit2) << 2 | int(btn_bit1) << 1 | int(btn_bit0) << 0
             func_btn_array_ = int(func_btn_array_) & 0b1111000011111
             func_btn_array_ = int(func_btn_array_) | btn_bits << 5
-        if func_grp_ == 0b1010: # F9-F12
+        elif func_grp_ == 0b1010: # F9-F12
             btn_bit0 = ((int(data_) >> 15 & 1) != 0)
             btn_bit1 = ((int(data_) >> 16 & 1) != 0)
             btn_bit2 = ((int(data_) >> 17 & 1) != 0)
