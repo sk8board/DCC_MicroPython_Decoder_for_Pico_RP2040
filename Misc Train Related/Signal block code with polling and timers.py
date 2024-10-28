@@ -1,5 +1,5 @@
 # RP2040 signal block code with polling and timers
-#
+# Work in progress
 # RP2040 takes input from four IR sensors to sense when a train car has entered a block
 # Red is triggered immediately upon entering the first block
 # Yellow and Green are triggered after two seconds of not sensing a train car
