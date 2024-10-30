@@ -8,9 +8,6 @@ The intent is to use this software with a Raspberry Pi Pico or WaveShare RP2040-
 
 ![image](https://github.com/user-attachments/assets/402a8c4d-a92e-432f-b2a8-601fd274922b)
 
-MicroPython code of the parser functions are slow (700us), which consumes significant processor time (10%). For most layout applications, this inefficiency is adequate.
-For more elaborate applications, Viper coding of the parser functions would improve parsing speed, resulting in an estimated change in processor time from 10% down to 1%. 
-
 For reference, this code was developed using MicroPython version v1.23
 
 # Hardware
