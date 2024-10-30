@@ -8,7 +8,6 @@ LED = Pin(25, Pin.OUT)
 # and enter the desired DCC address for this decoder.
 # Note: appropriate circuitry is needed between the Pico
 # and the railroad tracks to protect the Pico from damage.
-# Note: the address must be between 1 and 127
 my_dcc_decoder = DCC.pin_addr(16,1) # (pin, addr)
 
 while True:					# DCC.f_btn(n) returns True or False of button number 'n'
