@@ -1,8 +1,6 @@
 # RP2040 DCC train decoder
 #
-# Work In Progress
-#
-# This software decodes DCC model train serial communication to obtain the state of function buttons F1-F12.
+# This software decodes DCC model train serial communication to obtain the state of function buttons F1-F12 and throttle.
 # The intent is to use this code with a Raspberry Pi Pico or WaveShare RP2040-Zero to program and actuate signals and gates on a model train layout.
 # Note: appropriate circuitry is needed between the Pico and the railroad tracks to protect the Pico from damage.
 # Note: code was developed using MicroPython version v1.23
@@ -14,8 +12,9 @@ import rp2
 ### Definitions
 semaphore = 0	# used to control access to buffered variables for prevention of conflict
 short_address = 127	# maximum threshold of a short address
-func_btn_array = array.array('L',[0b0000000000000])
-func_btn_array_addr = uctypes.addressof(func_btn_array)
+func_btn_array = int(0)
+throttle_pos = int(0)
+throttle_dir = int(0)
 data = array.array('L',[0xffffffff,0xffffffff]) 
 
 class pin_addr: 							# retrieve GPIO pin number that connect to the railroad tracks
@@ -87,7 +86,6 @@ def sm1_config():
         push(noblock)		    # move the 32-bits from the ISR to the RX FIFO
 
         # Once address start bit is found, then gather the next 3 bits into the RX FIFO
-        #label("send_bits")
         set(y, 2)			    # set scratch y to 2, this will count down for each bit to be added to ISR
     
         label("loop_3")
@@ -98,11 +96,9 @@ def sm1_config():
         
         push(noblock)		    # move the 32-bits from the ISR to the RX FIFO
 
-        #irq(rel(0))			    # set IRQ flag which will trigger the IRQ handler to get the 32-bit word from the RX FIFO
         wrap()
 
     sm1 = rp2.StateMachine(1, build_bitstream)	# build array of bit at clock speed
-    #sm1.irq(handler=dma23_irq_handler, hard=False)
     sm1.active(1)   # set state machine active
 ### End State Machine 1 Code
 
@@ -142,15 +138,15 @@ def dma_config():
         sniff_en = False,       # do not allow access to debug
         chain_to = dma0.channel # chain to dma0
     )
-
+    
     dma2_ctrl = dma2.pack_ctrl(
         enable = True,          # enable DMA channel
         high_pri = True,        # set DMA bus traffic priority as high
         size = 2,               # Transfer size: 0=byte, 1=half word, 2=word (default: 2)
         inc_read = False,       # do not increment to read address
         inc_write = True,      	# increment the write address
-        ring_size = 0,          # increment size is zero
-        ring_sel = True,       	# not used since ring_sel is zero
+        ring_size = 3,          # increment size is 8-bits (2^3)
+        ring_sel = True,       	# apply to write address
         treq_sel = 5,           # select transfer rate of PIO0 RX FIFO, DREQ_PIO0_RX1
         irq_quiet = False,      # generate an interrupt after transfer is complete
         bswap = False,          # do not reverse the order of the word
@@ -163,14 +159,14 @@ def dma_config():
         high_pri = True,        # set DMA bus traffic priority as high
         size = 2,               # Transfer size: 0=byte, 1=half word, 2=word (default: 2)
         inc_read = False,       # do not increment to read address
-        inc_write = False,      # do not increment the write address
-        ring_size = 0,          # increment size is zero
-        ring_sel = True,       	# not used since ring_sel is zero
-        treq_sel = 0x3f,        # select transfer rate of system full speed to restart DMA2
-        irq_quiet = True,      	# do not generate an interrupt after transfer is complete
+        inc_write = True,      	# increment the write address
+        ring_size = 3,          # increment size is 8-bits (2^3)
+        ring_sel = True,       	# apply to write address
+        treq_sel = 5,           # select transfer rate of PIO0 RX FIFO, DREQ_PIO0_RX1
+        irq_quiet = False,      # generate an interrupt after transfer is complete
         bswap = False,          # do not reverse the order of the word
         sniff_en = False,       # do not allow access to debug
-        chain_to = dma3.channel # chain to self
+        chain_to = dma2.channel # chain to dma2
     )
 
     dma0.active(1)  # set DMA channel active
@@ -181,12 +177,12 @@ def dma_config():
     RXF0_addr = const(0x50200020)   # address of RX FIFO register for State Machine 0, see RP2040 datasheet
     TXF1_addr = const(0x50200014)   # address of TX FIFO register for State Machine 1
     RXF1_addr = const(0x50200024)   # address of RX FIFO register for State Machine 1
-
+    
     # configure dma channels
     dma0_config = dma0.config(read=RXF0_addr, write=TXF1_addr, count=1, ctrl=dma0_ctrl, trigger=True)
     dma1_config = dma1.config(read=RXF0_addr, write=TXF1_addr, count=1, ctrl=dma1_ctrl, trigger=True)
     dma2_config = dma2.config(read=RXF1_addr, write=uctypes.addressof(data), count=2, ctrl=dma2_ctrl, trigger=True)
-    dma3_config = dma3.config(read=dma2_ctrl, write=dma2.registers[15:15], count=2, ctrl=dma3_ctrl, trigger=True)
+    dma3_config = dma3.config(read=RXF1_addr, write=uctypes.addressof(data), count=2, ctrl=dma3_ctrl, trigger=True)
 
     # Note: dma2 and dma3 are configured to alternate their transfer of bits from state machine 1 to the variable "data"
     dma2.irq(handler=dma23_irq_handler, hard=False)  # call dma23_irq_handler() when dma2 completes transfer of data
@@ -195,64 +191,89 @@ def dma_config():
 
 ### Data Parser Code
 @micropython.viper
-def addr_parser(data_:uint,dcc_address_number_:uint)->bool: # parse bits from data to obtain the address
+def addr_parser(data0:uint,dcc_address_number_:uint)->bool: # parse bits from data to obtain the address
     if uint(dcc_address_number_) > uint(short_address):
-        data_addr_MSByte = (uint(data_) >> 24) & ~(0xFFFFFF0)
-        data_addr_LSByte = (uint(data_) >> 15) & ~(0xFFFFF00)
-        data_addr = (uint(data_addr_MSByte) << 8) + uint(data_addr_LSByte)	# parse long address
-        return uint(data_addr) == uint(dcc_address_number_)
+        data0addr_MSByte = (uint(data0) >> 24) & ~(0b11000000)
+        data0addr_LSByte = (uint(data0) >> 15) & ~(0xFFFFF00)
+        data0addr = (uint(data0addr_MSByte) << 8) + uint(data0addr_LSByte)	# parse long address
+        return uint(data0addr) == uint(dcc_address_number_)
     else:
-        data_addr = (uint(data_) >> 24) & ~(0b10000000)		# parse short address
-        return uint(data_addr) == uint(dcc_address_number_)
+        data0addr = (uint(data0) >> 24) & ~(0b10000000)		# parse short address
+        return uint(data0addr) == uint(dcc_address_number_)
 
 @micropython.viper
-def func_grp_parser(data_:uint)->uint: # parse bits from data to obtain the function group number
+def func_grp_parser(data0:uint)->uint: # parse bits from data to obtain the function group number
     if uint(dcc_address_number) > uint(short_address):
-        return (uint(data_) >> 10) & ~(0xFFFFFF0)
+        return (uint(data0) >> 10) & ~(0xFFFFFF0)
     else:
-        return (uint(data_) >> 19) & ~(0xFFFFFF0)
+        return (uint(data0) >> 19) & ~(0xFFFFFF0)
 
 @micropython.viper
-def func_btn_parser(data_:uint)->uint: # parse bits from data to obtain the state of the function buttons
+def func_btn_parser(data0:uint)->uint: # parse bits from data to obtain the state of the function buttons
     if uint(dcc_address_number) > uint(short_address):
-        return (uint(data_) >> 6) & ~(0xFFFFFF0)
+        return (uint(data0) >> 6) & ~(0xFFFFFF0)
     else:
-        return (uint(data_) >> 15) & ~(0xFFFFFF0)
+        return (uint(data0) >> 15) & ~(0xFFFFFF0)
 
 @micropython.viper
-def func_btn_array_build(data_:int,func_btn_array_:int):    # Update and build the function button array from data
-    global semaphore
+def _28_step_throttle(data0:uint):
+    global throttle_pos
+    if uint(dcc_address_number) > uint(short_address):
+        throttle_pos = (uint(data0) >> 6) & ~(0xFFFFFF0)
+    else:
+        throttle_pos = (uint(data0) >> 10) & ~(0xFFFFFF0)
+        
+@micropython.viper
+def _126_step_throttle(data0:uint,data1:uint):
+    global throttle_pos
+    if uint(dcc_address_number) > uint(short_address):
+        x = (uint(data0) >> 0) & ~(uint(0b11111111111111111111111111110000))
+        throttle_pos = (uint(x) << 3) + uint(data1)
+    else:
+        throttle_pos = (uint(data0) >> 6) & ~(uint(0b11111111111111111111111110000000))
+
+@micropython.viper
+def func_btn_array_build(data0:uint,data1:uint,func_btn_array_:int):    # Update and build the function button array from data
+    global semaphore, throttle_dir, throttle_pos, func_btn_array
     semaphore = 1   # Prevent other functions from accessing func_btn_array while manipulating this variables
-    #print(addr_parser_)
-    if int(addr_parser(data_,dcc_address_number)):
-        func_grp_parser_ = int(func_grp_parser(data_))
+    if int(addr_parser(data0,dcc_address_number)):
+        func_grp_parser_ = int(func_grp_parser(data0))
         if func_grp_parser_ == 0b1000: # F1-F4
             func_btn_array_ = int(func_btn_array_) & 0b1111111100001
-            func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data_)) << 1
+            func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data0)) << 1
         elif func_grp_parser_ == 0b1001: # F1-F4
             func_btn_array_ = int(func_btn_array_) & 0b1111111100001
-            func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data_)) << 1
+            func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data0)) << 1
         elif func_grp_parser_ == 0b1011: # F5-F8
             func_btn_array_ = int(func_btn_array_) & 0b1111000011111
-            func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data_)) << 5
+            func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data0)) << 5
         elif func_grp_parser_ == 0b1010: # F9-F12
             func_btn_array_ = int(func_btn_array_) & 0b0000111111111
-            func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data_)) << 9
+            func_btn_array_ = int(func_btn_array_) | int(func_btn_parser(data0)) << 9
         elif func_grp_parser_ == 0b0011: # 126 step speed
-            pass # TBD
-        elif func_grp_parser_ == (0b0100 or 0b0101): # 28 step reverse speed
-            pass # TBD
-        elif func_grp_parser_ == (0b0110 or 0b0111): # 28 step forward speed
-            pass # TBD
-        ptr32(func_btn_array_addr)[0] = int(func_btn_array_)
+            throttle_dir = ((int(data0) >> 4 & 1) != 0)
+            _126_step_throttle(data0,data1)
+        elif func_grp_parser_ == 0b0100: # 28 step reverse speed
+            throttle_dir = int(0)
+            _28_step_throttle(data0)
+        elif func_grp_parser_ == 0b0101: # 28 step reverse speed
+            throttle_dir = int(0)
+            _28_step_throttle(data0)
+        elif func_grp_parser_ == 0b0110: # 28 step forward speed
+            throttle_dir = int(1)
+            _28_step_throttle(data0)
+        elif func_grp_parser_ == 0b0111: # 28 step forward speed
+            throttle_dir = int(1)
+            _28_step_throttle(data0)
+        func_btn_array = int(func_btn_array_)
     semaphore = 0 # Allow access of func_btn_array to other functions
 
 def f_btn(func_btn_number): # return the boolean value of the x'th bit from the function button array
     if semaphore == 0:  # do not access the func_btn_array variable, if dma23_irq_handler() is manipulating the variable
-        return ((func_btn_array[0] >> func_btn_number & 1) != 0) 
+        return ((func_btn_array >> func_btn_number & 1) != 0) 
 ### End Data Parser
 
 ### Interrupt Handler
-def dma23_irq_handler(dma1):
+def dma23_irq_handler(dma2):
     if semaphore == 0:  # do not access the func_btn_array variable, if DCC() is manipulating the variable
-        func_btn_array_build(data[0],func_btn_array[0])
+        func_btn_array_build(data[0],data[1],func_btn_array)
