@@ -147,7 +147,7 @@ dma2_ctrl[0] = dma2.pack_ctrl(
     size = 2,               # Transfer size: 0=byte, 1=half word, 2=word (default: 2)
     inc_read = False,       # do not increment to read address
     inc_write = True,      	# increment the write address
-    ring_size = 3,          # increment size is 8-bits (2^3)
+    ring_size = 3,          # total transfer is two 32-bit integers, which is a total of 8 bytes (2^3)
     ring_sel = True,       	# apply to write address
     treq_sel = 5,           # select transfer rate of PIO0 RX FIFO, DREQ_PIO0_RX1
     irq_quiet = False,      # generate an interrupt after transfer is complete
