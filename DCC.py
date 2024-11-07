@@ -271,6 +271,14 @@ def func_btn_array_build(data0:uint,data1:uint,func_btn_array_:int):    # Update
 def f_btn(func_btn_number): # return the boolean value of the x'th bit from the function button array
     if semaphore == 0:  # do not access the func_btn_array variable, if dma23_irq_handler() is manipulating the variable
         return ((func_btn_array >> func_btn_number & 1) != 0) 
+
+def thr_pos():
+    if semaphore == 0:
+        return throttle_pos
+    
+def thr_dir():
+    if semaphore == 0:
+        return throttle_dir
 ### End Data Parser
 
 ### Interrupt Handler
