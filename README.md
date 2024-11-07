@@ -38,14 +38,14 @@ There are five key parts to using this DCC decoder.
 
     The example above uses function button 3 to operate an LED.
    
-4) `x = DCC.throttle_dir`
+4) `DCC.thr_dir()`
 
-    This provides the throttle direction. 1 or True indicates forward while
+    This function returns the throttle direction. 1 or True indicates forward while
    0 or False idicates reverse.
    
-5) `y = DCC.throttle_pos`
+5) `DCC.thr_pos()`
 
-    This provides the throttle position. NMRA allows the throttle
+    This function returns the throttle position. NMRA allows the throttle
    position to be configured in the roster as 28-step resolution
    or 127-step resolution. `DCC.throttle_pos` will return
    either 0 to 28 or 0 to 127 depending on the roster config.
