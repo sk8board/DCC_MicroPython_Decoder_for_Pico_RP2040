@@ -1,5 +1,7 @@
 # RP2040 DCC train decoder
 #
+# Work in progress
+#
 # This software decodes DCC model train serial communication to obtain the state of function buttons F1-F12 and throttle.
 # The intent is to use this code with a Raspberry Pi Pico or WaveShare RP2040-Zero to program and actuate signals and gates on a model train layout.
 # Note: appropriate circuitry is needed between the Pico and the railroad tracks to protect the Pico from damage.
