@@ -1,3 +1,4 @@
+# find USB device ports using terminal
 #!/bin/bash
 
 for sysdevpath in $(find /sys/bus/usb/devices/usb*/ -name dev); do
@@ -11,4 +12,6 @@ for sysdevpath in $(find /sys/bus/usb/devices/usb*/ -name dev); do
     )
 done
 
-$SHELL
+# alternate method, unplug and replug in USB device to see what was recently plugged-in.
+# then run this command in terminal:
+# sudo dmesg | grep -i usb
