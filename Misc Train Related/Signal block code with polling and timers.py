@@ -12,20 +12,20 @@ import time
 #### Setup
 
 # RGB LEDs
-Rgb1 = machine.PWM(0, freq=100, duty_u16=65535)
-rGb1 = machine.PWM(1, freq=100, duty_u16=65535)
+Rgb1 = machine.PWM(1, freq=100, duty_u16=65535)
+rGb1 = machine.PWM(0, freq=100, duty_u16=65535)
 rgB1 = machine.PWM(2, freq=100, duty_u16=65535)
 
-Rgb2 = machine.PWM(3, freq=100, duty_u16=65535)
-rGb2 = machine.PWM(4, freq=100, duty_u16=65535)
+Rgb2 = machine.PWM(4, freq=100, duty_u16=65535)
+rGb2 = machine.PWM(3, freq=100, duty_u16=65535)
 rgB2 = machine.PWM(5, freq=100, duty_u16=65535)
 
-Rgb3 = machine.PWM(6, freq=100, duty_u16=65535)
-rGb3 = machine.PWM(7, freq=100, duty_u16=65535)
+Rgb3 = machine.PWM(7, freq=100, duty_u16=65535)
+rGb3 = machine.PWM(6, freq=100, duty_u16=65535)
 rgB3 = machine.PWM(8, freq=100, duty_u16=65535)
 
-Rgb4 = machine.PWM(9, freq=100, duty_u16=65535)
-rGb4 = machine.PWM(10, freq=100, duty_u16=65535)
+Rgb4 = machine.PWM(10, freq=100, duty_u16=65535)
+rGb4 = machine.PWM(9, freq=100, duty_u16=65535)
 rgB4 = machine.PWM(11, freq=100, duty_u16=65535)
 
 # IR sensors
@@ -220,4 +220,5 @@ while True:
 
     if (sense2_state == 0) & (Red4_state == 0) & (Yellow4_state == 1):
         timer2.init(mode=machine.Timer.ONE_SHOT, period=car_gap_time, callback=sense2_timer)
+
 
