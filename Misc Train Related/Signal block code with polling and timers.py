@@ -29,10 +29,10 @@ rGb4 = machine.PWM(10, freq=100, duty_u16=65535)
 rgB4 = machine.PWM(11, freq=100, duty_u16=65535)
 
 # IR sensors
-sense1 = machine.Pin(12, machine.Pin.IN, machine.Pin.PULL_UP)
-sense2 = machine.Pin(13, machine.Pin.IN, machine.Pin.PULL_UP)
-sense3 = machine.Pin(14, machine.Pin.IN, machine.Pin.PULL_UP)
-sense4 = machine.Pin(15, machine.Pin.IN, machine.Pin.PULL_UP)
+sense1 = machine.Pin(26, machine.Pin.IN, machine.Pin.PULL_UP)
+sense2 = machine.Pin(27, machine.Pin.IN, machine.Pin.PULL_UP)
+sense3 = machine.Pin(28, machine.Pin.IN, machine.Pin.PULL_UP)
+sense4 = machine.Pin(29, machine.Pin.IN, machine.Pin.PULL_UP)
 
 # Delay timer for each sensor
 timer1 = machine.Timer()
@@ -220,3 +220,4 @@ while True:
 
     if (sense2_state == 0) & (Red4_state == 0) & (Yellow4_state == 1):
         timer2.init(mode=machine.Timer.ONE_SHOT, period=car_gap_time, callback=sense2_timer)
+
